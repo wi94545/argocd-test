@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-test
+  namespace: nginx
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx-test
+  template:
+    metadata:
+      labels:
+        app: nginx-test
+    spec:
+      containers:
+      - name: nginx-test
+        image: asia-east1-docker.pkg.dev/silver-impulse-462505-s4/joe-repo/nginx-proxy-internal:latest
+        ports:
+        - containerPort: 80
+        resources:
+          requests:
+            cpu: "100m"
+            memory: "128Mi"
+          limits:
+            cpu: "200m"
+            memory: "256Mi"
+        volumeMounts:
+        - name: nginx-static-volume
+          mountPath: /usr/share/nginx/html/index.html
+          subPath: index.html
+      volumes:
+      - name: nginx-static-volume
+        configMap:
+          name: nginx-static
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-test
+  namespace: nginx
+  annotations:
+    beta.cloud.google.com/backend-config: '{"default": "nginx-test-backendconfig"}'
+spec:
+  selector:
+    app: nginx-test
+  ports:
+  - port: 80
+    targetPort: 80
